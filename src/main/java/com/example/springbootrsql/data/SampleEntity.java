@@ -1,9 +1,9 @@
 package com.example.springbootrsql.data;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
+import javax.persistence.*;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 public class SampleEntity {
@@ -19,6 +19,25 @@ public class SampleEntity {
     private String email;
 
     private LocalDate creationDate;
+
+    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    private List<SampleChildEntity> children = new ArrayList<>();
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public List<SampleChildEntity> getChildren() {
+        return children;
+    }
+
+    public void setChildren(List<SampleChildEntity> children) {
+        this.children = children;
+    }
 
     public String getName() {
         return name;

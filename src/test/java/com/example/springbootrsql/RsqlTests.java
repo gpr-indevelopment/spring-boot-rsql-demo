@@ -1,5 +1,6 @@
 package com.example.springbootrsql;
 
+import com.example.springbootrsql.data.SampleChildEntity;
 import com.example.springbootrsql.data.SampleEntity;
 import com.example.springbootrsql.data.SampleEntityRepository;
 import com.example.springbootrsql.rsql.CustomRsqlVisitor;
@@ -8,6 +9,7 @@ import cz.jirutka.rsql.parser.RSQLParser;
 import cz.jirutka.rsql.parser.ast.Node;
 import cz.jirutka.rsql.parser.ast.RSQLVisitor;
 import io.github.perplexhub.rsql.RSQLJPASupport;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -51,6 +53,11 @@ public class RsqlTests {
         entity2.setEmail("TWO@ANYMAIL.COM");
         entity2.setName("ENTITY_2");
         repository.save(entity2);
+    }
+
+    @After
+    public void cleanup() {
+        repository.findAll().forEach(entity -> repository.delete(entity));
     }
 
     /**
@@ -109,5 +116,31 @@ public class RsqlTests {
         List<SampleEntity> foundEntities = repository.findAll(RSQLJPASupport.toSpecification("name==ENTITY_1;email==ONE@ANYMAIL.COM"));
         assertThat(foundEntities.size()).isEqualTo(1);
         assertThat(foundEntities.get(0).getName()).isEqualTo("ENTITY_1");
+    }
+
+    /**
+     * Author: Gabriel Robaina
+     * Last commit on lib: Jul 2, 2020
+     * Lib: https://github.com/perplexhub/rsql-jpa-specification
+     * Comments:
+     * Proof that the rsql-jpa-specification lib can be used to search for entities based on an attribute of one of its children.
+     * This is very usefl when we are working with tags, for example, and we want to find one entity based on the value of one tag.
+     */
+    @Test
+    public void searchFromChildParameters_childrenWithNameProperty_findsSuccessfully() {
+        SampleEntity sampleEntity = new SampleEntity();
+        sampleEntity.setName("ENTITY_3");
+        SampleChildEntity childEntity1 = new SampleChildEntity();
+        childEntity1.setName("TOBEFOUND");
+        childEntity1.setParent(sampleEntity);
+        SampleChildEntity childEntity2 = new SampleChildEntity();
+        childEntity2.setName("CANTFIND");
+        childEntity2.setParent(sampleEntity);
+        sampleEntity.getChildren().add(childEntity1);
+        sampleEntity.getChildren().add(childEntity2);
+        sampleEntity = repository.save(sampleEntity);
+        List<SampleEntity> foundEntities = repository.findAll(RSQLJPASupport.toSpecification("children.name==TOBEFOUND"));
+        assertThat(foundEntities.size()).isEqualTo(1);
+        assertThat(foundEntities.get(0)).isEqualToIgnoringGivenFields(sampleEntity, "children");
     }
 }
